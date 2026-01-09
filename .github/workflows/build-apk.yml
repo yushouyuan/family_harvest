@@ -1,0 +1,94 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Android SDK tools
+        run: |
+          mkdir -p /tmp/android-sdk/cmdline-tools
+          cd /tmp/android-sdk/cmdline-tools
+          curl --retry 3 --retry-delay 5 -sSLo tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          unzip -q tools.zip -d latest
+          rm tools.zip
+          export ANDROID_SDK_ROOT=/tmp/android-sdk
+          export ANDROID_HOME=/tmp/android-sdk
+          yes | /tmp/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=/tmp/android-sdk "platform-tools" "platforms;android-35" "build-tools;35.0.0" "cmdline-tools;latest"
+
+      - name: Build Cordova APK
+        working-directory: android_apk/cordova_example
+        run: |
+          npm ci
+          npx cordova platform remove android || true
+          npx cordova platform add android
+          npx cordova build android --release
+
+      - name: Upload unsigned APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-apk
+          path: android_apk/cordova_example/platforms/android/app/build/outputs/apk/release/*.apk
+
+      - name: Sign APK
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        working-directory: android_apk/cordova_example
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.KEY_PASSWORD }}
+          ANDROID_SDK_ROOT: /tmp/android-sdk
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > release.keystore
+          APK=$(find platforms/android/app/build/outputs/apk/release -name '*.apk' ! -name '*signed*' | head -1)
+          /tmp/android-sdk/build-tools/35.0.0/apksigner sign --ks release.keystore --ks-key-alias "$KEY_ALIAS" --ks-pass "pass:$KS_PASS" --key-pass "pass:$KEY_PASS" --out app-release-signed.apk "$APK"
+
+      - name: Upload signed APK
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-apk
+          path: android_apk/cordova_example/app-release-signed.apk
+
+      - name: Create Release
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: apk-${{ github.run_id }}
+          release_name: APK Build ${{ github.run_number }}
+          draft: false
+          prerelease: false
+
+      - name: Upload to Release
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: android_apk/cordova_example/app-release-signed.apk
+          asset_name: app-release-signed.apk
+          asset_content_type: application/vnd.android.package-archive

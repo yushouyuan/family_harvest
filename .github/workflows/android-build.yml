@@ -10,8 +10,8 @@ jobs:
     name: Build Cordova Android APK
     runs-on: ubuntu-latest
     env:
-      ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
-      ANDROID_HOME: ${{ runner.temp }}/android-sdk
+      ANDROID_SDK_ROOT: "${{ runner.temp }}/android-sdk"
+      ANDROID_HOME: "${{ runner.temp }}/android-sdk"
       CORDOVA_PLATFORM: android
       NODE_OPTIONS: "--max-old-space-size=4096"
       # 可替换为最新的 commandline tools 链接

@@ -8,3 +8,15 @@
 ### 注意事项
 该网站是http链接，android会限制浏览器调用录音功能
 完整阅读整个项目，同步修改dockfile、readme、requirements等文件
+
+
+#### 关键步骤
+关键步骤：
+
+将Django静态文件构建到mobile/www/
+
+使用Capacitor同步Android项目
+
+在云端配置Android SDK
+
+构建APK并自动分发

@@ -92,7 +92,7 @@ jobs:
           path: android_apk/cordova_example/platforms/android/app/build/outputs/apk/release/*.apk
 
       - name: Sign APK (optional)
-        if: ${{ secrets.KEYSTORE_BASE64 && secrets.KEY_ALIAS && secrets.KEYSTORE_PASSWORD && secrets.KEY_PASSWORD }}
+        if: secrets.KEYSTORE_BASE64 && secrets.KEY_ALIAS && secrets.KEYSTORE_PASSWORD && secrets.KEY_PASSWORD
         working-directory: android_apk/cordova_example
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -119,7 +119,7 @@ jobs:
           ls -l app-release-signed.apk
 
       - name: Create GitHub Release and upload signed APK (optional)
-        if: ${{ secrets.KEYSTORE_BASE64 && secrets.KEY_ALIAS && secrets.KEYSTORE_PASSWORD && secrets.KEY_PASSWORD }}
+        if: secrets.KEYSTORE_BASE64 && secrets.KEY_ALIAS && secrets.KEYSTORE_PASSWORD && secrets.KEY_PASSWORD
         uses: actions/create-release@v1
         id: create_release
         env:
@@ -131,7 +131,7 @@ jobs:
           prerelease: false
 
       - name: Upload signed APK to Release (optional)
-        if: ${{ secrets.KEYSTORE_BASE64 && secrets.KEY_ALIAS && secrets.KEYSTORE_PASSWORD && secrets.KEY_PASSWORD }}
+        if: secrets.KEYSTORE_BASE64 && secrets.KEY_ALIAS && secrets.KEYSTORE_PASSWORD && secrets.KEY_PASSWORD
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -142,7 +142,7 @@ jobs:
           asset_content_type: application/vnd.android.package-archive
 
       - name: Upload signed APK (optional)
-        if: ${{ secrets.KEYSTORE_BASE64 && secrets.KEY_ALIAS && secrets.KEY_PASSWORD }}
+        if: secrets.KEYSTORE_BASE64 && secrets.KEY_ALIAS && secrets.KEY_PASSWORD
         uses: actions/upload-artifact@v4
         with:
           name: signed-apk

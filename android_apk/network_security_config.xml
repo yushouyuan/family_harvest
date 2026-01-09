@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+  <!-- 开发/内网示例：允许所有明文流量（生产环境请使用更严格的规则） -->
+  <base-config cleartextTrafficPermitted="true">
+    <trust-anchors>
+      <certificates src="system" />
+    </trust-anchors>
+  </base-config>
+
+  <!-- 或者只对本地开发服务器允许明文： -->
+  <!--
+  <domain-config cleartextTrafficPermitted="true">
+    <domain>192.168.0.10</domain>
+  </domain-config>
+  -->
+</network-security-config>

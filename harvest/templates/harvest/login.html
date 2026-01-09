@@ -1,0 +1,24 @@
+{% extends 'harvest/base.html' %}
+{% block title %}登录 - 家庭收获{% endblock %}
+{% block content %}
+  <h2>请选择家庭成员登录</h2>
+  <form method="post" class="mt-3">
+    {% csrf_token %}
+    <div class="mb-3">
+      <div class="list-group">
+        {% for m in members %}
+          <label class="list-group-item d-flex align-items-center">
+            <input type="radio" name="member" value="{{ m.id }}" class="form-check-input me-2">
+            {% if m.avatar %}
+              <img src="{{ m.avatar.url }}" style="height:36px;width:36px;object-fit:cover;border-radius:50%;margin-right:10px;"/>
+            {% else %}
+              <img src="/static/harvest/default-avatar.png" style="height:36px;width:36px;object-fit:cover;border-radius:50%;margin-right:10px;"/>
+            {% endif %}
+            <span>{{ m.display_name }}</span>
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+    <button class="btn btn-primary">登录</button>
+  </form>
+{% endblock %}

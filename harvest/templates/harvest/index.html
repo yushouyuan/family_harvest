@@ -1,0 +1,37 @@
+{% extends 'harvest/base.html' %}
+{% block title %}今日汇总{% endblock %}
+{% block content %}
+  <h2>今日（{{ today }}) 家庭收获</h2>
+  <div class="row">
+    {% for c in cards %}
+      <div class="col-md-6 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title d-flex align-items-center">
+              {% if c.member.avatar %}
+                <img src="{{ c.member.avatar.url }}" alt="avatar" style="height:40px;width:40px;object-fit:cover;border-radius:50%;margin-right:10px;"/>
+              {% else %}
+                <img src="/static/harvest/default-avatar.png" alt="avatar" style="height:40px;width:40px;object-fit:cover;border-radius:50%;margin-right:10px;"/>
+              {% endif %}
+              <span>{{ c.member.display_name }}</span>
+            </h5>
+            {% if c.record %}
+              <p class="card-text">{{ c.record.text|linebreaksbr }}</p>
+              {% if c.record.audio %}
+                <audio controls src="{{ c.record.audio.url }}"></audio>
+              {% endif %}
+              {% if request.session.member_id == c.member.id %}
+                <a href="{% url 'edit_record' c.record.id %}" class="btn btn-sm btn-outline-primary mt-2">编辑</a>
+              {% endif %}
+            {% else %}
+              <p class="text-muted">还没有记录。</p>
+              {% if request.session.member_id == c.member.id %}
+                <a href="{% url 'add_record' %}" class="btn btn-sm btn-primary">添加</a>
+              {% endif %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

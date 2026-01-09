@@ -1,0 +1,173 @@
+{% extends 'harvest/base.html' %}
+{% load static %}
+{% block title %}添加/编辑记录{% endblock %}
+{% block content %}
+  <h3>记录 - {{ member.display_name }}</h3>
+  <form method="post" enctype="multipart/form-data" id="recordForm">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="mb-3">
+      {{ form.date.label_tag }}
+      <input type="date" name="{{ form.date.name }}" id="{{ form.date.id_for_label }}" class="form-control" value="{% if form.instance and form.instance.date %}{{ form.instance.date|date:'Y-m-d' }}{% else %}{% now 'Y-m-d' %}{% endif %}" required>
+      {{ form.date.errors }}
+    </div>
+    <div class="mb-3">
+      {{ form.text.label_tag }}
+      {{ form.text }}
+      {{ form.text.errors }}
+    </div>
+    <div class="mb-3">
+      <label>语音（可录制）</label>
+      <div>
+        <button type="button" class="btn btn-sm btn-secondary" id="recBtn">开始/停止 录音</button>
+        <span id="recStatus" class="ms-2 text-muted"></span>
+      </div>
+      {% if form.instance and form.instance.audio %}
+        <div class="mb-2">
+          <label class="form-label">当前已上传录音：</label>
+          <div>
+            <audio controls src="{{ form.instance.audio.url }}"></audio>
+          </div>
+          <small class="text-muted">若选择新文件，将覆盖已有录音。</small>
+        </div>
+      {% endif %}
+      <input type="file" name="audio" id="audioInput" class="form-control mt-2">
+      {{ form.audio.errors }}
+    </div>
+    <button class="btn btn-primary">保存</button>
+  </form>
+{% endblock %}
+
+{% block extra_js %}
+<!-- 引入RecordRTC库 -->
+<script src="{% static 'harvest/RecordRTC.min.js' %}"></script>
+
+<script>
+// 使用RecordRTC实现录音功能
+const btn = document.getElementById('recBtn');
+const status = document.getElementById('recStatus');
+let recorder = null;
+let recording = false;
+
+btn.addEventListener('click', async () => {
+  if (recording) {
+    // 停止录音
+    recorder.stopRecording(function() {
+      const blob = recorder.getBlob();
+
+      // 自动检测音频格式和文件名后缀
+      let extension = 'wav';
+      if (blob.type.includes('mp3')) {
+        extension = 'mp3';
+      } else if (blob.type.includes('ogg')) {
+        extension = 'ogg';
+      } else if (blob.type.includes('webm')) {
+        extension = 'webm';
+      }
+
+      // 将录音文件设置到表单中
+      const file = new File([blob], `record_${Date.now()}.${extension}`, { type: blob.type });
+
+      const input = document.getElementById('audioInput');
+
+      if (typeof DataTransfer !== 'undefined') {
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        input.files = dataTransfer.files;
+      } else {
+        // 旧浏览器兼容
+        const filesArray = [file];
+        try {
+          input.files = filesArray;
+        } catch (e) {
+          console.error('无法直接设置文件:', e);
+        }
+      }
+
+      status.textContent = "录音已完成";
+      btn.classList.remove('btn-danger');
+      btn.classList.add('btn-secondary');
+      recording = false;
+    });
+  } else {
+    // 开始录音
+    try {
+      status.textContent = "正在请求麦克风权限...";
+
+      // 浏览器兼容性处理
+      if (!navigator.mediaDevices) {
+        navigator.mediaDevices = {};
+      }
+
+      if (!navigator.mediaDevices.getUserMedia) {
+        // 旧版浏览器支持
+        navigator.mediaDevices.getUserMedia = (constraints) => {
+          const getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+
+          if (!getUserMedia) {
+            return Promise.reject(new Error('getUserMedia is not implemented in this browser'));
+          }
+
+          return new Promise((resolve, reject) => {
+            getUserMedia.call(navigator, constraints, resolve, reject);
+          });
+        };
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // 创建录音对象 - 尽可能简单的配置以支持更多浏览器
+      try {
+        recorder = new RecordRTC(stream); // 不指定任何格式，让RecordRTC完全自动选择
+      } catch (recordingError) {
+        // 如果默认配置失败，尝试使用StereoAudioRecorder明确配置为wav格式
+        recorder = new RecordRTC(stream, {
+          type: 'audio',
+          recorderType: RecordRTC.StereoAudioRecorder,
+          mimeType: 'audio/wav',
+          sampleRate: 44100,
+          numberOfAudioChannels: 1
+        });
+      }
+
+      // 开始录音
+      recorder.startRecording();
+
+      status.textContent = "录音中...点击按钮停止";
+      btn.classList.remove('btn-secondary');
+      btn.classList.add('btn-danger');
+      recording = true;
+    } catch (error) {
+      let errorMsg = "录音失败: ";
+
+      switch (error.name) {
+        case "NotAllowedError":
+        case "PermissionDeniedError":
+          errorMsg += "请允许麦克风权限";
+          break;
+        case "NotFoundError":
+        case "DevicesNotFoundError":
+          errorMsg += "未检测到麦克风";
+          break;
+        case "NotReadableError":
+          errorMsg += "麦克风不可用";
+          break;
+        case "NotSupportedError":
+          errorMsg += "浏览器不支持录音功能";
+          break;
+        case "TypeError":
+          // 这个错误通常是因为浏览器不支持navigator.mediaDevices
+          errorMsg += "浏览器兼容性问题: 请尝试使用最新版Chrome或Firefox浏览器";
+          break;
+        default:
+          errorMsg += "未知错误: " + error.message;
+      }
+
+      status.textContent = errorMsg;
+      btn.classList.remove('btn-danger');
+      btn.classList.add('btn-secondary');
+    }
+  }
+});
+</script>
+{% endblock %}

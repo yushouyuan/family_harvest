@@ -1,0 +1,21 @@
+{% extends 'harvest/base.html' %}
+{% block title %}历史记录{% endblock %}
+{% block content %}
+  <h2>历史记录</h2>
+  <div class="list-group">
+    {% for r in records %}
+      <div class="list-group-item">
+        <div class="d-flex w-100 justify-content-between">
+          <h5 class="mb-1">{{ r.member.display_name }} - {{ r.date }}</h5>
+          <small>{{ r.created_at }}</small>
+        </div>
+        <p class="mb-1">{{ r.text|linebreaksbr }}</p>
+        {% if r.audio %}
+          <audio controls src="{{ r.audio.url }}"></audio>
+        {% endif %}
+      </div>
+    {% empty %}
+      <div class="alert alert-info">没有记录</div>
+    {% endfor %}
+  </div>
+{% endblock %}

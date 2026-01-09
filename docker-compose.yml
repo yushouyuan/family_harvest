@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  web:
+    container_name: family_harvest
+    image: "family_harvest:latest"
+    # 将容器的8000端口映射到主机的8000端口
+    ports:
+      - "32752:8000"
+    # 将项目文件挂载到容器，实现代码热重载
+    volumes:
+      - .:/app
+      - /share/Container/family_harvest/media:/app/media
+    # 环境变量配置
+    environment:
+      - DATABASE_NAME=test
+      - DATABASE_USER=vs_user
+      - DATABASE_PASSWORD=vscode
+      - DATABASE_HOST=syivan.mycloudnas.com
+      - DATABASE_PORT=3307
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    # 启动命令：先执行数据库迁移，再启动Django开发服务器
+    #command: gunicorn family_harvest.wsgi:application --bind 0.0.0.0:32752
+    command: entrypoint.sh
+    restart: unless-stopped
+    network_mode: host

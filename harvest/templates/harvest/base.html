@@ -1,0 +1,46 @@
+{% load static %}
+{% load harvest_extras %}
+<!doctype html>
+<html lang="zh-cn">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}家庭收获{% endblock %}</title>
+    <link href="{% static "bootstrap/css/bootstrap.min.css" %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'harvest/styles.css' %}">
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'index' %}">家庭收获</a>
+        <div class="collapse navbar-collapse">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item"><a class="nav-link" href="{% url 'history' %}">历史</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'stats' %}">我的统计</a></li>
+          </ul>
+          <span class="navbar-text">
+            {% if request.session.member_name %}
+              已登录：{{ request.session.member_name }} · <a href="{% url 'logout' %}">登出</a>
+            {% elif request.session.member_id %}
+              已登录 · <a href="{% url 'logout' %}">登出</a>
+            {% else %}
+              <a href="{% url 'login' %}">登录</a>
+            {% endif %}
+          </span>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container">
+      {% if messages %}
+        {% for m in messages %}
+          <div class="alert alert-{{ m.tags }}">{{ m }}</div>
+        {% endfor %}
+      {% endif %}
+      {% block content %}{% endblock %}
+    </div>
+
+    <script src="{% static "bootstrap/js/bootstrap.bundle.min.js" %}"></script>
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>

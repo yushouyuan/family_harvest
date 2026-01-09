@@ -50,7 +50,6 @@ jobs:
           path: android_apk/cordova_example/platforms/android/app/build/outputs/apk/release/*.apk
 
       - name: Sign APK
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
         working-directory: android_apk/cordova_example
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -59,19 +58,21 @@ jobs:
           KEY_PASS: ${{ secrets.KEY_PASSWORD }}
           ANDROID_SDK_ROOT: /tmp/android-sdk
         run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "No keystore provided; skipping signing step."
+            exit 0
+          fi
           echo "$KEYSTORE_B64" | base64 -d > release.keystore
           APK=$(find platforms/android/app/build/outputs/apk/release -name '*.apk' ! -name '*signed*' | head -1)
           /tmp/android-sdk/build-tools/35.0.0/apksigner sign --ks release.keystore --ks-key-alias "$KEY_ALIAS" --ks-pass "pass:$KS_PASS" --key-pass "pass:$KEY_PASS" --out app-release-signed.apk "$APK"
 
       - name: Upload signed APK
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: signed-apk
           path: android_apk/cordova_example/app-release-signed.apk
 
       - name: Create Release
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
         uses: actions/create-release@v1
         id: create_release
         env:
@@ -83,7 +84,6 @@ jobs:
           prerelease: false
 
       - name: Upload to Release
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,44 @@
+workflows:
+  build-apk:
+    name: Build Cordova APK
+    instance_type: mac_mini_m1  # 或 linux_x64，根据需要选择
+    environment:
+      node: 18
+      java: 17
+      android_signing:
+        - keystore_reference
+    scripts:
+      - name: Checkout code
+        script: |
+          echo "Code checked out"
+      - name: Install Android SDK
+        script: |
+          echo "Android SDK already available on Codemagic"
+      - name: Prepare Cordova project
+        script: |
+          cd android_apk/cordova_example
+          npm ci
+          npx cordova platform remove android || true
+          npx cordova platform add android
+      - name: Build unsigned APK
+        script: |
+          cd android_apk/cordova_example
+          npx cordova build android --release --no-update-notifier
+      - name: Sign APK
+        script: |
+          cd android_apk/cordova_example
+          # Codemagic 会自动处理签名，如果配置了 keystore_reference
+          echo "APK signed by Codemagic"
+    artifacts:
+      - android_apk/cordova_example/platforms/android/app/build/outputs/apk/release/*.apk
+    publishing:
+      google_play:
+        # 如果需要发布到 Google Play，配置这里
+        # credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        # track: internal
+      email:
+        recipients:
+          - your-email@example.com
+        notify:
+          success: true
+          failure: true

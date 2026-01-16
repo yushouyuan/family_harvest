@@ -5,8 +5,6 @@ workflows:
     environment:
       node: 18
       java: 17
-      android_signing:
-        - keystore_reference
     scripts:
       - name: Checkout code
         script: |
@@ -27,8 +25,18 @@ workflows:
       - name: Sign APK
         script: |
           cd android_apk/cordova_example
-          # Codemagic 会自动处理签名，如果配置了 keystore_reference
-          echo "APK signed by Codemagic"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
+            APK_UNSIGNED=$(find platforms/android/app/build/outputs/apk/release -name '*.apk' ! -name '*signed*' | head -1)
+            if [ -n "$APK_UNSIGNED" ]; then
+              apksigner sign --ks release.keystore --ks-key-alias "$KEY_ALIAS" --ks-pass "pass:$KEYSTORE_PASSWORD" --key-pass "pass:$KEY_PASSWORD" --out app-release-signed.apk "$APK_UNSIGNED"
+              echo "APK signed successfully"
+            else
+              echo "No unsigned APK found"
+            fi
+          else
+            echo "No keystore provided, skipping signing"
+          fi
     artifacts:
       - android_apk/cordova_example/platforms/android/app/build/outputs/apk/release/*.apk
     publishing:

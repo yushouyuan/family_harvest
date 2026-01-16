@@ -4,7 +4,7 @@ workflows:
     instance_type: mac_mini_m1  # 或 linux_x64，根据需要选择
     environment:
       node: 18
-      java: 17
+      java: 11
     scripts:
       - name: Checkout code
         script: |

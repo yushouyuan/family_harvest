@@ -78,7 +78,7 @@ Docker 使用（示例）:
 ```bash
 docker-compose build
 docker-compose up -d
-# 首次运行或代码变更后，检查迁移和静态文件（entrypoint 已自动处理）
+# 首次运行或代码变更后，检查迁移和静态文件（entrypoint 已自动处理 ）
 docker-compose logs -f web
 ```
 
